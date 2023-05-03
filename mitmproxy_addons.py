@@ -1,23 +1,7 @@
-from mitmproxy import ctx, http
-from helpers import RequestBuilder
-
-class ReplayAgent:
-    # sample add-on that replays the request after checking it is not a replay (to avoid an infinite loop)
-    def request(self, flow: http.HTTPFlow):
-        if hasattr(flow.request, 'replayed'):
-            return
-        
-        print(f'Replaying request: {flow.request}')
-        target_request = RequestBuilder.clone_request(flow)  # select the request builder needed, here we only clone it
-        target_request.replayed = True  # marks the request as a replay request
-
-        new_flow = flow.copy()
-        new_flow.request = target_request
-
-        # replays the specified flow (request cycle)
-        playback_action = ctx.master.addons.get('clientplayback')
-        playback_action.start_replay([new_flow])
-
+from mitmproxy import http
+from helpers import replay_flow
+from constants import URL_REGEX_STRING, PATH_REGEX_STRING
+import re, requests, tldextract
 
 class RerouteAgent:
     # sample add-on that reroutes the request or stops it according to certain rules
@@ -36,3 +20,42 @@ class RequestLogger:
     # sample add-on that prints the request passing through
     def request(self, flow: http.HTTPFlow):
         print(flow.request)
+
+
+class OpenRedirectionAttack:
+    REF_ATTACK_URL = 'http://google.com'
+    ATTACK_LABEL = 'OPEN_REDIRECTION'
+
+    def is_param_testable(self, param):
+        param_name, param_value = param
+        for REGEX in [ URL_REGEX_STRING, PATH_REGEX_STRING ]:
+            if re.match(REGEX, param_value):
+                return True
+        return False
+    
+
+    def is_attack_successful(self, flow: http.HTTPFlow):
+        return tldextract.extract(flow.request.url).domain == tldextract.extract(self.REF_ATTACK_URL).domain
+
+
+    def request(self, flow: http.HTTPFlow):
+        if hasattr(flow.request, 'ignore'):
+            return
+        
+        pairs_with_urls = [ pair for pair in flow.request.query.items() if self.is_param_testable(pair) ]
+        for param_name, param_value in pairs_with_urls:
+            print('open redirection?')
+            attack_flow = flow.copy()
+            attack_flow.request.label = self.ATTACK_LABEL
+            attack_flow.request.query[param_name] = self.REF_ATTACK_URL
+            attack_flow.request.ignore = True
+            # print(attack_flow.request.query)
+            replay_flow(attack_flow, self.ATTACK_LABEL)
+    
+
+    def response(self, flow: http.HTTPFlow):
+        if flow.request.label == self.ATTACK_LABEL:
+            # print(flow.request.host, flow.request.pretty_url, flow.request.url)
+            print(self.ATTACK_LABEL, 'Response')
+            if self.is_attack_successful(flow):
+                print(self.ATTACK_LABEL, 'SUCCESS!!')

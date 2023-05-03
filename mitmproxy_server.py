@@ -11,7 +11,7 @@ async def start_proxy(host, port):
         with_termlog=False,
         with_dumper=False,
     )
-    master.addons.add(RequestLogger(), RerouteAgent(), ReplayAgent())
+    master.addons.add(RequestLogger(), RerouteAgent(), OpenRedirectionAttack())
     
     await master.run()
     return master
