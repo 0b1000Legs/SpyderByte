@@ -12,7 +12,7 @@ async def start_proxy(host, port):
         with_dumper=False,
     )
     # master.addons.add(RequestLogger(), RerouteAgent(), IdorAttack())
-    master.addons.add(IdorAttack())
+    master.addons.add(IdorAttack(), JWTNoneAlgAttack())
     
     await master.run()
     return master

