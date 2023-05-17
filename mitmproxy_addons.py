@@ -74,45 +74,6 @@ class JWTNoneAlgAttack:
         else:
             pass # not a replayed request
 
-
-class OpenRedirectionAttack:
-    REF_ATTACK_URL = 'http://google.com'
-    ATTACK_LABEL = 'OPEN_REDIRECTION'
-
-    def is_param_testable(self, param):
-        param_name, param_value = param
-        for REGEX in [ URL_REGEX_STRING, PATH_REGEX_STRING ]:
-            if re.match(REGEX, param_value):
-                return True
-        return False
-    
-
-    def is_attack_successful(self, flow: http.HTTPFlow):
-        return tldextract.extract(flow.request.url).domain == tldextract.extract(self.REF_ATTACK_URL).domain
-
-
-    def request(self, flow: http.HTTPFlow):
-        if hasattr(flow.request, 'ignore'):
-            return
-        
-        pairs_with_urls = [ pair for pair in flow.request.query.items() if self.is_param_testable(pair) ]
-        for param_name, param_value in pairs_with_urls:
-            print('open redirection?')
-            attack_flow = flow.copy()
-            attack_flow.request.label = self.ATTACK_LABEL
-            attack_flow.request.query[param_name] = self.REF_ATTACK_URL
-            attack_flow.request.ignore = True
-            # print(attack_flow.request.query)
-            replay_flow(attack_flow)
-    
-
-    def response(self, flow: http.HTTPFlow):
-        if hasattr(flow.request, 'label') and flow.request.label == self.ATTACK_LABEL:
-            # print(flow.request.host, flow.request.pretty_url, flow.request.url)
-            print(self.ATTACK_LABEL, 'Response')
-            if self.is_attack_successful(flow):
-                print(self.ATTACK_LABEL, 'SUCCESS!!')
-
  
 class IdorAttack:
     ATTACK_LABEL = 'IDOR'
