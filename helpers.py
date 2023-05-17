@@ -60,3 +60,9 @@ def replay_flow(flow: http.HTTPFlow):
     # replays the specified flow (request cycle)
     playback_action = ctx.master.addons.get('clientplayback')
     playback_action.start_replay([flow])
+
+
+def print_attack_success(attack_name, flow: http.HTTPFlow):
+    print('--' * 25)
+    print('FOUND',attack_name, 'in', flow.request.path)
+    print('--' * 25, '\n')

@@ -66,9 +66,7 @@ class JWTNoneAlgAttack:
             replay_flow(attack_flow)
         elif flow.label == self.ATTACK_LABEL:    
             if flow.benchmark_hash != hash(flow.response.text):
-                print('--' * 25)
-                print(self.ATTACK_LABEL, 'SUCCESS!!', flow.request.pretty_url)
-                print('--' * 25, '\n')
+                print_attack_success(self.ATTACK_LABEL, flow)
             else:
                 pass # attack failed
         else:
@@ -158,7 +156,7 @@ class IdorAttack:
     def response(self, flow: http.HTTPFlow):
         if hasattr(flow, 'label'):
             if flow.label == self.ATTACK_LABEL and self.is_attack_successful(flow):
-                print('FOUND IDOR in', flow.request.path)
+                print_attack_success(self.ATTACK_LABEL, flow)
             return
         
         request_token = self.get_request_token(flow)
