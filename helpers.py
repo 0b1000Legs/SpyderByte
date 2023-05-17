@@ -1,4 +1,6 @@
 from mitmproxy import ctx, http
+from constants import APP_SCOPE
+from urllib.parse import urlparse
 
 
 # returns a clone of the original request with no modifications, exists as a sample builder method
@@ -14,6 +16,10 @@ def clone_request(flow: http.HTTPFlow):
         headers=flow.request.headers,
         method=flow.request.method,
     )
+
+
+def is_request_in_scope(flow: http.HTTPFlow):
+    return urlparse(flow.request.url).netloc == APP_SCOPE
 
 
 # replays the request after checking it is not a replay (to avoid an infinite loop)

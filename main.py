@@ -1,6 +1,12 @@
+from urllib.parse import urlparse
 import sys
 import asyncio
+import constants
+
+constants.APP_SCOPE = urlparse(sys.argv[3]).netloc  # sets the scope of the app
+
 from mitmproxy_server import start_proxy
+
 
 def main():
     host=sys.argv[1]
