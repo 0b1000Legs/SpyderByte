@@ -8,7 +8,7 @@ async def start_proxy(host, port):
 
     master = dump.DumpMaster(
         opts,
-        with_termlog=False,
+        with_termlog=True,
         with_dumper=False,
     )
     # master.addons.add(RequestLogger(), RerouteAgent(), IdorAttack())

