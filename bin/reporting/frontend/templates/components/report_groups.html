@@ -1,0 +1,35 @@
+{% for report_group in report_groups %}
+
+{% if report_group.reports|length > 0 %}
+
+<div class="accordion override-accordion" id={{utility.normalize_text(report_group.name)}}>
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                data-bs-target="#{{utility.normalize_text(report_group.name)}}-body" aria-expanded="true"
+                aria-controls="{{utility.normalize_text(report_group.name)}}-body">
+                <h2>{{report_group.name}} - {{report_group.acronym}} </h2>
+                <a target="_blank" href="/{{utility.normalize_text(report_group.name)}}">
+                    <h6> <span class="badge bg-primary ms-2"> ?</span></h6>
+                </a>
+            </button>
+        </h2>
+
+        <div id="{{utility.normalize_text(report_group.name)}}-body" class="accordion-collapse collapse show">
+            <div class="accordion-body">
+
+                {% for report in report_group.reports %}
+
+                {% include "components/reports.html" %}
+
+                {% endfor %}
+
+            </div>
+        </div>
+    </div>
+
+</div>
+<hr>
+{% endif %}
+
+{% endfor %}

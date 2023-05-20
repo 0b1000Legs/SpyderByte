@@ -1,0 +1,47 @@
+body {
+    background: black;
+    display: flex;
+}
+
+nav {
+    height: 100vh;
+    position: sticky;
+    top: 0;
+}
+
+main {
+    padding: 20px 40px;
+    width: calc(100% - 280px);
+}
+
+.accordion-button:focus {
+    box-shadow: unset !important;
+}
+
+.accordion {
+    margin: 10px auto;
+}
+
+.override-accordion {
+    &>.accordion-item {
+        border: unset;
+
+        &>.accordion-header .accordion-button {
+            padding-bottom: 0;
+
+            &:not(.collapsed) {
+                background-color: unset !important;
+                box-shadow: unset !important;
+            }
+        }
+
+        &>.accordion-collapse>.accordion-body {
+            padding-top: 0;
+
+            & section {
+                margin: 20px;
+            }
+        }
+    }
+
+}

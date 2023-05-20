@@ -1,0 +1,36 @@
+<div class="accordion">
+    <div class="accordion-item border-danger-subtle">
+        <h2 class="accordion-header border-danger-subtle">
+            <button class="accordion-button bg-danger-subtle border-danger-subtle" type="button"
+                data-bs-toggle="collapse" data-bs-target="#{{utility.normalize_text(report_group.name+'-'+report.id)}}"
+                aria-expanded="true" aria-controls="{{utility.normalize_text(report_group.name+'-'+report.id)}}">
+                <strong>
+                    Endpoint:
+                </strong>
+                <span style="margin-left: 10px;">
+                    {{utility.normalize_text(report.endpoint)}}
+                </span>
+
+            </button>
+        </h2>
+        <div id="{{utility.normalize_text(report_group.name+'-'+report.id)}}" class="accordion-collapse collapse ">
+            <div class="accordion-body">
+                <section>
+                    <h4>Attack Description</h4>
+                    <p>{{report_group.description}}</p>
+                    <a target="_blank" href={{utility.normalize_text(report_group.name)}}>Learn more about
+                        <strong>{{report_group.name}}</strong> attack.</a>
+                </section>
+                <section>
+                    <h4>Request body</h4>
+                    <pre><code>{{report.request_body}}</code></pre>
+                </section>
+                <section>
+                    <h4>Response body</h4>
+                    <pre><code>{{report.response_body}}</code></pre>
+                </section>
+
+            </div>
+        </div>
+    </div>
+</div>
