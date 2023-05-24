@@ -4,6 +4,9 @@ import re
 from mitmproxy import ctx, http
 from constants import APP_SCOPE
 from urllib.parse import urlparse
+import requests
+from mitmproxy.addons.export import raw_request, raw_response
+
 
 
 # returns a clone of the original request with no modifications, exists as a sample builder method
@@ -66,3 +69,23 @@ def print_attack_success(attack_name, flow: http.HTTPFlow):
     print('--' * 25)
     print('FOUND',attack_name, 'in', flow.request.path)
     print('--' * 25, '\n')
+
+
+def report_attack(attack_label, flow: http.HTTPFlow):
+    request_body = raw_request(flow).decode('utf-8')
+    response_body = raw_response(flow).decode('utf-8')
+    endpoint = flow.request.path
+    
+    API_ENDPOINT = 'http://localhost:8000/api/v1/insert_report'
+    ATTACK_IDS = {
+        "IDOR": 1,
+        "SSRF": 2,
+        "JWT_NONE_ALG_ATTACK": 3
+    }
+    
+    requests.post(API_ENDPOINT, json={
+        "attack_class": ATTACK_IDS[attack_label],
+        "endpoint": endpoint,
+        "request_body": request_body,
+        "response_body": response_body,
+    })

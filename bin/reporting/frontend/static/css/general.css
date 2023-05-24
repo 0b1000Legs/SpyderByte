@@ -1,44 +1,30 @@
 body {
   background: black;
-  display: flex;
-}
+  display: flex; }
 
 nav {
   height: 100vh;
   position: sticky;
-  top: 0;
-}
+  top: 0; }
 
 main {
   padding: 20px 40px;
-  width: calc(100% - 280px);
-}
+  width: calc(100% - 280px); }
 
 .accordion-button:focus {
-  box-shadow: unset !important;
-}
+  box-shadow: unset !important; }
 
 .accordion {
-  margin: 10px auto;
-}
+  margin: 10px auto; }
 
-.override-accordion>.accordion-item {
-  border: unset;
-}
-
-.override-accordion>.accordion-item>.accordion-header .accordion-button {
-  padding-bottom: 0;
-}
-
-.override-accordion>.accordion-item>.accordion-header .accordion-button:not(.collapsed) {
-  background-color: unset !important;
-  box-shadow: unset !important;
-}
-
-.override-accordion>.accordion-item>.accordion-collapse>.accordion-body {
-  padding-top: 0;
-}
-
-.override-accordion>.accordion-item>.accordion-collapse>.accordion-body section {
-  margin: 20px;
-}
+.override-accordion > .accordion-item {
+  border: unset; }
+  .override-accordion > .accordion-item > .accordion-header .accordion-button {
+    padding-bottom: 0; }
+    .override-accordion > .accordion-item > .accordion-header .accordion-button:not(.collapsed) {
+      background-color: unset !important;
+      box-shadow: unset !important; }
+  .override-accordion > .accordion-item > .accordion-collapse > .accordion-body {
+    padding-top: 0; }
+    .override-accordion > .accordion-item > .accordion-collapse > .accordion-body section {
+      margin: 20px; }

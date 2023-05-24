@@ -20,12 +20,7 @@ class RerouteAgent:
 class RequestLogger:
     # sample add-on that prints the request passing through
     def request(self, flow: http.HTTPFlow):
-        pass
         print(flow.request)
-        if flow.request.path == '/':
-            print(dict(flow.request.cookies) == dict(flow.request.cookies))
-        print(flow.request.query)
-        print(flow.request.path_components)
 
 
 class JWTNoneAlgAttack:
@@ -67,12 +62,14 @@ class JWTNoneAlgAttack:
         elif flow.label == self.ATTACK_LABEL:    
             if flow.benchmark_hash != hash(flow.response.text):
                 print_attack_success(self.ATTACK_LABEL, flow)
+                print(dir(flow.request))
+                report_attack(self.ATTACK_LABEL, flow)
             else:
                 pass # attack failed
         else:
             pass # not a replayed request
 
- 
+
 class IdorAttack:
     ATTACK_LABEL = 'IDOR'
     user_endpoints_map = {}
@@ -157,6 +154,7 @@ class IdorAttack:
         if hasattr(flow, 'label'):
             if flow.label == self.ATTACK_LABEL and self.is_attack_successful(flow):
                 print_attack_success(self.ATTACK_LABEL, flow)
+                report_attack(self.ATTACK_LABEL, flow)
             return
         
         request_token = self.get_request_token(flow)

@@ -34,11 +34,11 @@ app.mount(
     name="static",
 )
 
-
 def start_reporting_ui():
     uvicorn.run(
         f"{__name__}:app",
         host=settings.HOST,
         port=settings.REPORTING_PORT,
         reload=settings.DEV_MODE,
+        log_level=settings.LOG_LEVEL
     )

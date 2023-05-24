@@ -14,7 +14,8 @@ class ReportingService(BaseModel):
     db_connection: Optional[Connection] = None
 
     def init_database(self) -> Engine:
-        engine = create_engine(settings.DATABASE_NAME, echo=True)
+        # engine = create_engine(settings.DATABASE_NAME, echo=True)
+        engine = create_engine(settings.DATABASE_NAME)
 
         Base = declarative_base()
 

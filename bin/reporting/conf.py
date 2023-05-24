@@ -15,6 +15,8 @@ class Settings(BaseSettings):
 
     DEV_MODE: bool = False
 
+    LOG_LEVEL: str
+
     @validator("HOST", always=True)
     def host_validator(cls, v):
         return str(IPv4Address(getenv("HOST")))
