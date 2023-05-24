@@ -12,6 +12,7 @@ class AttackClassReports(BaseModel):
     name: Optional[str]
     acronym: Optional[str]
     description: Optional[str]
+    validation_criteria: Optional[str]
 
     @validator("name", always=True)
     def name_validator(cls, v, values):
@@ -24,3 +25,7 @@ class AttackClassReports(BaseModel):
     @validator("description", always=True)
     def description_validator(cls, v, values):
         return ATTACK_CLASS_DETAILS[values["type"]]["description"]
+
+    @validator("validation_criteria", always=True)
+    def validation_criteria_validator(cls, v, values):
+        return ATTACK_CLASS_DETAILS[values["type"]]["validation_criteria"]

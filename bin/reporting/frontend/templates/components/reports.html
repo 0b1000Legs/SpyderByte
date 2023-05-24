@@ -21,12 +21,17 @@
                     <a target="_blank" href={{utility.normalize_text(report_group.name)}}>Learn more about
                         <strong>{{report_group.name}}</strong> attack.</a>
                 </section>
-                <section>
-                    <h4>Request body</h4>
+                <section style="margin-top: 40px;">
+                    <h4>Validation Criteria</h4>
+                    <p>{{report_group.validation_criteria}}</p>
+                </section>
+
+                <section style="margin-top: 40px;">
+                    <h4>Validation Request</h4>
                     <pre><code>{{report.request_body}}</code></pre>
                 </section>
-                <section>
-                    <h4>Response body</h4>
+                <section style="margin-top: 30px;">
+                    <h4>Validation Response</h4>
                     <pre><code>{{report.response_body}}</code></pre>
                 </section>
 

@@ -4,16 +4,19 @@ ATTACK_CLASS_DETAILS = {
     AttackClassType.IDOR: {
         "name": "Insecure Direct Object References",
         "acronym": "IDOR",
-        "description": "Commodo excepteur sint dolore sunt. Aliquip exercitation aute nisi tempor laboris laboris aliqua Lorem mollit id qui. Veniam velit consectetur pariatur nostrud aliqua aliquip magna. Ullamco aute qui proident amet eiusmod labore. Laborum veniam cillum consectetur veniam exercitation. Fugiat anim enim do non mollit cupidatat aute ut esse in pariatur. Commodo non amet ea id.",
+        "description": "There is a vulnerability in enforcing access control measures, where certain user assets can be accessed only by knowing their identifier, without verifying if the user owns this asset or is authorized to access the asset. This allows for users to access other users information without consent and potentially tamper with them depending on the scenario.",
+        "validation_criteria": "The endpoint request is flagged when two conditions apply: first, multiple users can access a single endpoint, but each of them uses a unique identifier in the url path when doing so. second, the users can use each others identifiers with this endpoint to get the same responses.",
     },
     AttackClassType.SSRF: {
         "name": "Server-side Request Forgery",
         "acronym": "SSRF",
-        "description": "Mollit et dolore officia elit occaecat proident adipisicing. Officia elit irure ipsum magna esse labore ullamco reprehenderit. Ut nulla magna reprehenderit ut elit voluptate tempor officia nisi proident Lorem. Fugiat excepteur culpa eu id magna do fugiat Lorem ad eu.",
+        "description": "",
+        "validation_criteria": "s",
     },
-    AttackClassType.JWT: {
+    AttackClassType.JWT: { 
         "name": "Flawed JWT Signature Verification",
-        "acronym": "FJWTSV",
-        "description": "Minim mollit sit nulla dolor dolore est dolor. Ut mollit ex irure commodo sit. Adipisicing incididunt anim deserunt id aute. Id ut sint minim esse incididunt adipisicing duis non irure labore adipisicing aute. Reprehenderit et do ea dolor eiusmod in duis pariatur voluptate irure officia veniam eu commodo.",
+        "acronym": "None algorithm",
+        "description": "There is a vulnerability in the JWT signauture verification logic where the application accepts different algorithm values for the \"alg\" parameter in the JWT header including insecure values. An example of such values is the \"None\" algoritm, where the client can drop the JWT signature from the token all together and the application will skip token verification. This allows forgery of JWT tokens and can cause catastrophic access control issues.",
+        "validation_criteria": "The endpoint request is flagged when the endpoint responds with the original success response even when the JWT was tampered with.",
     },
 }
