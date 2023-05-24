@@ -26,15 +26,16 @@ class RequestLogger:
 class JWTNoneAlgAttack:
     BENCHMARK_LABEL = 'JWT_NONE_ALG_BENCHMARK' # label for the benchmark failing flow
     ATTACK_LABEL = 'JWT_NONE_ALG_ATTACK' # label for the attack flow
+    affected_endpoints = set()
 
     def request(self, flow: http.HTTPFlow):
         if get_jwt(flow.request.cookies) is None:
             return # No JWT token
         
-        if flow.request.path.find('socket.io') != -1:
-            return # socket.io request
+        if flow.request.path.find('socket.io') != -1 or not is_request_in_scope(flow):
+            return
         
-        if not hasattr(flow, 'label'):
+        if not hasattr(flow, 'label') and flow.request.path not in self.affected_endpoints:  
             benchmark_flow = flow.copy()
             benchmark_flow.label = self.BENCHMARK_LABEL
             benchmark_flow.request.headers.pop('Authorization', None)
@@ -61,8 +62,8 @@ class JWTNoneAlgAttack:
             replay_flow(attack_flow)
         elif flow.label == self.ATTACK_LABEL:    
             if flow.benchmark_hash != hash(flow.response.text):
+                self.affected_endpoints.add(flow.request.path)
                 print_attack_success(self.ATTACK_LABEL, flow)
-                print(dir(flow.request))
                 report_attack(self.ATTACK_LABEL, flow)
             else:
                 pass # attack failed
@@ -154,6 +155,8 @@ class IdorAttack:
         if hasattr(flow, 'label'):
             if flow.label == self.ATTACK_LABEL and self.is_attack_successful(flow):
                 print_attack_success(self.ATTACK_LABEL, flow)
+                request_token = self.get_request_token(flow)
+                self.user_endpoints_map.get(request_token)['ignore_path'] = True
                 report_attack(self.ATTACK_LABEL, flow)
             return
         
