@@ -8,19 +8,6 @@ from uuid import uuid4
 import threading
 
 
-class RerouteAgent:
-    # sample add-on that reroutes the request or stops it according to certain rules
-    def request(self, flow: http.HTTPFlow):
-        # redirect to different host
-        if flow.request.pretty_host == "google.com":
-            flow.request.host = "mitmproxy.org"
-        # answer from proxy
-        elif flow.request.path.endswith("/brew"):
-            flow.response = http.Response.make(
-                418, b"I'm a teapot",
-            )
-
-
 class RequestLogger:
     # sample add-on that prints the request passing through
     def request(self, flow: http.HTTPFlow):

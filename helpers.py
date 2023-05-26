@@ -8,21 +8,6 @@ import requests
 from mitmproxy.addons.export import raw_request, raw_response
 
 
-
-# returns a clone of the original request with no modifications, exists as a sample builder method
-def clone_request(flow: http.HTTPFlow):
-    return http.HTTPRequest(
-        first_line_format="origin_form",  # ???
-        scheme=flow.request.scheme,
-        port=flow.request.port,
-        path=flow.request.path,
-        http_version=flow.request.http_version,
-        content=flow.request.content,
-        host=flow.request.host,
-        headers=flow.request.headers,
-        method=flow.request.method,
-    )
-
 # uses REGEX to find a JWT token in the cookies
 def get_jwt(cookies: dict):
     token = None
@@ -35,6 +20,7 @@ def get_jwt(cookies: dict):
     else:
         return token.group(0)
 
+
 # generates a none alg JWT token from a valid one (keeping the same payload and signature)
 def generate_none_token_with_signature(token: str):
     header, payload, signature = token.split('.')
@@ -44,10 +30,12 @@ def generate_none_token_with_signature(token: str):
     header_encoded = base64.b64encode(json.dumps(parsed_header).encode()).decode().replace('=', '')
     return header_encoded + '.' + payload + '.' + signature
 
+
 # drops the signature from a JWT token
 def drop_token_signature(token: str):
     header, payload, signature = token.split('.')
     return header + '.' + payload + '.'
+
 
 def is_request_in_scope(flow: http.HTTPFlow):
     return urlparse(flow.request.url).netloc == APP_SCOPE
