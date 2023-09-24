@@ -1,8 +1,8 @@
 from flask import Flask, jsonify, request, make_response
 import logging
 
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
+# log = logging.getLogger('werkzeug')
+# log.setLevel(logging.ERROR)
 
 REPORTS_ACCESS_TOKEN = 'b43c9fe7a5c16adfbf0027f6bded4f0b0df47632c0eacfb7d72301c27124a288'
 successful_attack_ids = []

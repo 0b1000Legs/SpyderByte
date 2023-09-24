@@ -10,8 +10,8 @@ ATTACK_CLASS_DETAILS = {
     AttackClassType.SSRF: {
         "name": "Server-side Request Forgery",
         "acronym": "SSRF",
-        "description": "",
-        "validation_criteria": "s",
+        "description": "There is a vulnerability in a feature that takes a URL as an input, where a user can input a URL of any destination and get the server to send an HTTP request to it. SSRF vulnerabilities can be utilized to explore your internal network or to carry out denial-of-service attacks against third parties while concealing the attacker's identity.",
+        "validation_criteria": "The endpoint is flagged when an outbound detection server that the tool controls, successfully recieves an HTTP request after the tool modifies a URL input in some application feature. The request contains a unique identifier placed by the tool to detect where the request originated from.",
     },
     AttackClassType.JWT: { 
         "name": "Flawed JWT Signature Verification",
